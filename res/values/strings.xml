@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="app_name">领航</string>
+    <string name="myinfo_1_status">状态：%1$s(%2$d个卫星)</string>
+    <string name="myinfo_2_time">时间：%1$s</string>
+    <string name="myinfo_3_lon">经度：%1$s° %2$s\'</string>
+    <string name="myinfo_4_lat">纬度：%1$s° %2$s\'</string>
+    <string name="myinfo_5_speed">速度：%1$s节(%2$s公里/小时)</string>
+    <string name="myinfo_6_direction">方向：%1$s</string>
+    <string name="myinfo_7_altitude">海拔：%1$s米</string>
+    <string name="page_myinfo">我在哪</string>
+    <string name="page_navigate">目标领航</string>
+    <string name="page_sos">SOS求助</string>
+    <string name="myinfo_save">保存位置</string>
+    <string name="myinfo_report">报告位置</string>
+    <string name="myinfo_help">文本说明</string>
+    
+    <string name="options">选项</string>
+    <string name="ok">确定</string>
+    <string name="back">返回</string>
+
+</resources>

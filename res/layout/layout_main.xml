@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical" >
+
+    <Button
+        android:id="@+id/myinfo"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:drawableRight="@drawable/ic_myinfo"
+        android:gravity="left|center_vertical"
+        android:text="我在哪儿" />
+
+    <Button
+        android:id="@+id/navigate"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:drawableRight="@drawable/ic_history"
+        android:gravity="left|center_vertical"
+        android:text="领航" />
+
+    <Button
+        android:id="@+id/sos"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:drawableRight="@drawable/ic_sos"
+        android:gravity="left|center_vertical"
+        android:text="SOS" />
+
+</LinearLayout>
