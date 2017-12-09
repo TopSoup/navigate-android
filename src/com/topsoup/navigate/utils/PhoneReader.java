@@ -5,6 +5,8 @@ import android.telephony.TelephonyManager;
 import android.util.Log;
 
 public class PhoneReader {
+	public static String imsi, imei, phoneNumber, meid;
+
 	private static TelephonyManager geTelephonyManager(Context context) {
 		return (TelephonyManager) context
 				.getSystemService(Context.TELEPHONY_SERVICE);
@@ -17,7 +19,7 @@ public class PhoneReader {
 	 * @return
 	 */
 	public static final String getIMEI(Context context) {
-		return geTelephonyManager(context).getDeviceId();
+		return imei = geTelephonyManager(context).getDeviceId();
 	}
 
 	/**
@@ -27,7 +29,7 @@ public class PhoneReader {
 	 * @return
 	 */
 	public static final String getIMSI(Context context) {
-		return geTelephonyManager(context).getSubscriberId();
+		return imsi = geTelephonyManager(context).getSubscriberId();
 	}
 
 	/**
@@ -37,7 +39,7 @@ public class PhoneReader {
 	 * @return
 	 */
 	public static final String getMEID(Context context) {
-		return getIMEI(context);
+		return meid = getIMEI(context);
 	}
 
 	/**
@@ -47,7 +49,7 @@ public class PhoneReader {
 	 * @return
 	 */
 	public static final String getPhoneNumber(Context context) {
-		return geTelephonyManager(context).getLine1Number();
+		return phoneNumber = geTelephonyManager(context).getLine1Number();
 	}
 
 	/**

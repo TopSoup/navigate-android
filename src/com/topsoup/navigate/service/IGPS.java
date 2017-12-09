@@ -16,12 +16,12 @@ public interface IGPS {
 		Northwest// 西北
 	}
 
-	public IGPS start(Context context, int interval);
+	public IGPS start(Context context, int interval, String tag);
 
-	public IGPS stop();
+	public IGPS stop(String tag);
 
 	public IGPS setListener(IGPSListener listener);
-	
+
 	public Location last();
 
 	public int getInterval();

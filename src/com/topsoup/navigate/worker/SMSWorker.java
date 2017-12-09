@@ -17,6 +17,7 @@ import android.util.Log;
 import com.topsoup.navigate.model.SOS;
 import com.topsoup.navigate.service.ISOS;
 import com.topsoup.navigate.service.ISOSListener;
+import com.topsoup.navigate.task.SMSTask;
 import com.topsoup.navigate.utils.SMSReader;
 
 public class SMSWorker extends BroadcastReceiver implements ISOS {
@@ -30,6 +31,7 @@ public class SMSWorker extends BroadcastReceiver implements ISOS {
 		if (ACTION.equals(intent.getAction())) {
 			Object[] pdus = (Object[]) intent.getExtras().get("pdus");
 			for (Object pdu : pdus) {
+				@SuppressWarnings("deprecation")
 				SmsMessage smsMessage = SmsMessage.createFromPdu((byte[]) pdu);
 				String sender = smsMessage.getDisplayOriginatingAddress();
 				// 短信内容
@@ -54,9 +56,16 @@ public class SMSWorker extends BroadcastReceiver implements ISOS {
 			System.out.println("模拟短信sender:" + sender);
 			System.out.println("模拟短信sms:" + content);
 			try {
-				SOS sos = SOS.parseSMS(sender, content);
-				if (sos != null)
-					EventBus.getDefault().post(sos);
+				if (SMSTask.isTrue(content)) {
+					SMSTask task = SMSTask.paste(content);
+					if (task != null) {// 正确的任务
+						EventBus.getDefault().postSticky(task);
+					}
+				} else {
+					SOS sos = SOS.parseSMS(sender, content);
+					if (sos != null)
+						EventBus.getDefault().post(sos);
+				}
 			} catch (ParseException e) {
 				e.printStackTrace();
 			}
@@ -69,7 +78,7 @@ public class SMSWorker extends BroadcastReceiver implements ISOS {
 	}
 
 	@Override
-	public void start(Context context) {
+	public SMSWorker start(Context context) {
 		if (mContext == null) {
 			mContext = context.getApplicationContext();
 			IntentFilter intentFilter = new IntentFilter();
@@ -80,6 +89,7 @@ public class SMSWorker extends BroadcastReceiver implements ISOS {
 		}
 		if (!EventBus.getDefault().isRegistered(this))
 			EventBus.getDefault().register(this);
+		return this;
 	}
 
 	@Override

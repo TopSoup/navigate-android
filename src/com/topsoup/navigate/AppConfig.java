@@ -16,7 +16,8 @@ import com.topsoup.navigate.worker.SMSWorker;
 
 public class AppConfig extends Application {
 	public static final int GPS_minTime = 1000;
-	public static final int GPS_minDistance = 0;
+	public static final int GPS_minDistance = 5;
+	public static final boolean SOS_KEY_LISTEN = true;
 
 	private GPSWorker gpsWorker;
 	private SMSWorker smsWorker;

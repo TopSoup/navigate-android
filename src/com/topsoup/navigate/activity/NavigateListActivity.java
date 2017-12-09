@@ -1,5 +1,6 @@
 package com.topsoup.navigate.activity;
 
+import java.util.Date;
 import java.util.List;
 
 import org.xutils.ex.DbException;
@@ -12,6 +13,7 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v4.widget.SwipeRefreshLayout.OnRefreshListener;
+import android.text.TextUtils;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
@@ -26,6 +28,7 @@ import com.topsoup.navigate.R;
 import com.topsoup.navigate.base.BaseActivity;
 import com.topsoup.navigate.model.MyLocation;
 import com.topsoup.navigate.model.SOS;
+import com.topsoup.navigate.utils.SLUtils;
 
 @ContentView(R.layout.activity_navigatelist)
 public class NavigateListActivity extends BaseActivity implements
@@ -78,8 +81,10 @@ public class NavigateListActivity extends BaseActivity implements
 					TextView tv = (TextView) super.getView(position,
 							convertView, parent);
 					MyLocation location = getItem(position);
-					tv.setText(location.name + "\nlat:" + location.lat
-							+ "\nlon:" + location.lon);
+					String title = location.name;
+					if (TextUtils.isEmpty(title))
+						title = SLUtils.format(new Date(location.createTime));
+					tv.setText(title);
 					return tv;
 				}
 			};
@@ -97,8 +102,8 @@ public class NavigateListActivity extends BaseActivity implements
 					SOS sos = getItem(position);
 					if (sos.hasLocation()) {
 						tv.setText("[定位求助]" + "\n" + sos.getUser() + " 发起求助\n"
-								+ "lon:" + sos.getLon() + " lat:"
-								+ sos.getLat() + "\n"
+						// + "lon:" + sos.getLon() + " lat:"
+						// + sos.getLat() + "\n"
 								+ sos.getString(sos.getStartTime()));
 					} else
 						tv.setText("[无定位求助]\n" + sos.getUser() + " 发起求助\n"
@@ -187,10 +192,13 @@ public class NavigateListActivity extends BaseActivity implements
 			long id) {
 		switch (type) {
 		case MY:
-			LoteInfoActivity.start(this, adapter.getItem(position), false);
+			NavigateActivity.start(this, adapter.getItem(position));
+			// LoteInfoActivity.start(this, adapter.getItem(position), false);
 			break;
 		case SOS:
-			LoteInfoActivity.start(this, sosAdapter.getItem(position), false);
+			NavigateActivity.start(this, sosAdapter.getItem(position));
+			// LoteInfoActivity.start(this, sosAdapter.getItem(position),
+			// false);
 			break;
 		}
 	}
@@ -316,10 +324,12 @@ public class NavigateListActivity extends BaseActivity implements
 		case R.id.center:
 			switch (type) {
 			case MY:
-				LoteInfoActivity.start(this, selectedLocate, false);
+				NavigateActivity.start(this, selectedLocate);
+				// LoteInfoActivity.start(this, selectedLocate, false);
 				break;
 			case SOS:
-				LoteInfoActivity.start(this, selectedSOS, false);
+				NavigateActivity.start(this, selectedSOS);
+				// LoteInfoActivity.start(this, selectedSOS, false);
 				break;
 			default:
 				break;

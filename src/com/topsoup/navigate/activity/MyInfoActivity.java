@@ -9,6 +9,7 @@ import org.xutils.view.annotation.ViewInject;
 
 import android.app.AlertDialog;
 import android.content.DialogInterface;
+import android.graphics.Color;
 import android.location.Location;
 import android.os.Bundle;
 import android.view.KeyEvent;
@@ -27,7 +28,11 @@ import com.topsoup.navigate.worker.ComPassWorker;
 import com.topsoup.navigate.worker.DBWorker;
 
 @ContentView(R.layout.activity_myinfo)
-public class MyInfoActivity extends BaseActivity implements IComPassListener {
+public class MyInfoActivity extends BaseActivity implements IComPassListener,
+		Runnable {
+	@ViewInject(R.id.tip)
+	private TextView tvTip;
+
 	@ViewInject(R.id.tv_status)
 	private TextView tvStatus;
 
@@ -58,12 +63,13 @@ public class MyInfoActivity extends BaseActivity implements IComPassListener {
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		showTitle("我在哪儿");
-		app.getGpsWorker().start(this, AppConfig.GPS_minTime);
+		app.getGpsWorker().start(this, AppConfig.GPS_minTime, "myinfo");
+		tvTip.setText("卫星信号弱，请移动到开阔位置");
 	}
 
 	@Override
 	protected void onDestroy() {
-		app.getGpsWorker().stop();
+		app.getGpsWorker().stop("myinfo");
 		super.onDestroy();
 	}
 
@@ -96,6 +102,21 @@ public class MyInfoActivity extends BaseActivity implements IComPassListener {
 		refreshUI();
 	}
 
+	@Override
+	public void run() {
+		if (tvTip.getVisibility() == View.VISIBLE) {
+			int color = (Integer) tvTip.getTag();
+			if (color == Color.WHITE) {
+				tvTip.setTextColor(Color.BLACK);
+				tvTip.setTag(Color.BLACK);
+			} else {
+				tvTip.setTextColor(Color.WHITE);
+				tvTip.setTag(Color.WHITE);
+			}
+			tvTip.postDelayed(this, 300);
+		}
+	}
+
 	private void refreshUI() {
 		int count = 0;
 		double lon = 0, lat = 0;
@@ -112,6 +133,16 @@ public class MyInfoActivity extends BaseActivity implements IComPassListener {
 		}
 		if (satellite != null)
 			count = satellite.count;
+		if (count <= 5) {
+			if (tvTip.getVisibility() == View.GONE) {
+				tvTip.setVisibility(View.VISIBLE);
+				tvTip.setTextColor(Color.BLACK);
+				tvTip.setTag(Color.BLACK);
+				tvTip.post(this);
+			}
+		} else {
+			tvTip.setVisibility(View.GONE);
+		}
 		tvStatus.setText(getString(R.string.myinfo_1_status, "卫星", count));
 		tvTime.setText(getString(R.string.myinfo_2_time, SLUtils.format(time)));
 		String[] lonResult = SLUtils.dd2dm(lon);

@@ -48,11 +48,12 @@ public class NavigateActivity extends BaseActivity {
 	@ViewInject(R.id.compassView)
 	private CompassView compassView;
 
+	private String gpsTag;
+
 	@SuppressWarnings("deprecation")
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		app.getGpsWorker().start(this, AppConfig.GPS_minTime);
 		findViewById(R.id.toolbar).setVisibility(View.GONE);
 		Intent intent = getIntent();
 		if (intent.hasExtra("locate")) {
@@ -60,11 +61,16 @@ public class NavigateActivity extends BaseActivity {
 			name = locate.name;
 			lat = locate.lat;
 			lon = locate.lon;
+			app.getGpsWorker().start(this, AppConfig.GPS_minTime,
+					gpsTag = "navigate");
 		} else if (intent.hasExtra("sos")) {
 			sos = (SOS) intent.getSerializableExtra("sos");
 			name = sos.user;
 			lat = sos.getLat();
 			lon = sos.getLon();
+			if (sos.hasLocation)
+				app.getGpsWorker().start(this, AppConfig.GPS_minTime,
+						gpsTag = "sos");
 		} else {
 			showToast("参数错误");
 			finish();
@@ -88,7 +94,7 @@ public class NavigateActivity extends BaseActivity {
 	@Override
 	protected void onDestroy() {
 		super.onDestroy();
-		app.getGpsWorker().stop();
+		app.getGpsWorker().stop(gpsTag);
 	}
 
 	private void loadData() {
@@ -96,6 +102,9 @@ public class NavigateActivity extends BaseActivity {
 		Location target = new Location("test");
 		target.setLatitude(lat);
 		target.setLongitude(lon);
+		if (sos != null && !sos.hasLocation) {
+			showToast("无目标位置信息!");
+		}
 		float angle = app.getGpsWorker().angle(target);
 		float distanceBysys = app.getGpsWorker().distance(target);
 		tvDistance.setText(String.format("距离：%.2f米", distanceBysys));

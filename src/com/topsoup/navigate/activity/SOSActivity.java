@@ -1,22 +1,33 @@
 package com.topsoup.navigate.activity;
 
+import java.util.List;
+
 import org.greenrobot.eventbus.EventBus;
 import org.xutils.view.annotation.ContentView;
 import org.xutils.view.annotation.Event;
 import org.xutils.view.annotation.ViewInject;
 
+import android.content.Context;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.graphics.Color;
+import android.location.LocationManager;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.PowerManager;
+import android.provider.Settings;
 import android.view.KeyEvent;
 import android.view.View;
+import android.view.View.OnClickListener;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.topsoup.navigate.AppConfig;
+import com.topsoup.navigate.MainActivity;
 import com.topsoup.navigate.R;
 import com.topsoup.navigate.base.BaseActivity;
 import com.topsoup.navigate.event.SOSEvent;
+import com.topsoup.navigate.model.Contact;
 
 @ContentView(R.layout.activity_sos)
 public class SOSActivity extends BaseActivity implements Runnable {
@@ -26,19 +37,78 @@ public class SOSActivity extends BaseActivity implements Runnable {
 	private TextView sosTip;
 	private int count = 0;
 
+	@ViewInject(R.id.right)
+	private TextView back;
+
+	private PowerManager pwManager;
+	private PowerManager.WakeLock wakeLock;
+
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
-		// TODO Auto-generated method stub
 		super.onCreate(savedInstanceState);
-		findViewById(R.id.right).setVisibility(View.GONE);
-		EventBus.getDefault().postSticky(SOSEvent.START);
-		mhHandler.postDelayed(this, 500);
-		app.getGpsWorker().start(this, AppConfig.GPS_minTime);
+		pwManager = (PowerManager) getSystemService(Context.POWER_SERVICE);
+		wakeLock = pwManager.newWakeLock(PowerManager.FULL_WAKE_LOCK, "sosac");
+		wakeLock.acquire();
+		back.setText("取消");
+		back.setOnClickListener(new OnClickListener() {
+
+			@Override
+			public void onClick(View arg0) {
+				MainActivity.start(SOSActivity.this);
+				finish();
+			}
+		});
+	}
+
+	private void openGPSSettings() {
+		LocationManager alm = (LocationManager) this
+				.getSystemService(Context.LOCATION_SERVICE);
+		if (alm.isProviderEnabled(android.location.LocationManager.GPS_PROVIDER)) {
+			Toast.makeText(this, "GPS定位模块正常", Toast.LENGTH_SHORT).show();
+			return;
+		} else if (alm.isProviderEnabled(LocationManager.NETWORK_PROVIDER)) {
+			Toast.makeText(this, "网络定位模块正常", Toast.LENGTH_SHORT).show();
+			return;
+		}
+		Toast.makeText(this, "请开启GPS！", Toast.LENGTH_SHORT).show();
+		Intent intent = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
+		startActivityForResult(intent, 0); // 此为设置完成后返回到获取界面
+	}
+
+	private void start() {
+		SOSEvent event = EventBus.getDefault().getStickyEvent(SOSEvent.class);
+
+		if (event == null || event != SOSEvent.START) {
+			app.getGpsWorker().start(this, AppConfig.GPS_minTime, "sendSos");// 开启定位
+			EventBus.getDefault().postSticky(SOSEvent.START);
+			mhHandler.postDelayed(this, 500);
+		}
+	}
+
+	@Override
+	protected void onResume() {
+		super.onResume();
+		openGPSSettings();
+		if (checkSettings())
+			start();
+	}
+
+	public boolean checkSettings() {
+		List<Contact> contacts = app.getDbWorker().getContactList();
+		if (contacts == null || contacts.size() == 0) {
+			SettingsActivity.start(this);
+			showToast("首次使用请设置紧急联系人");
+			return false;
+		}
+		return true;
 	}
 
 	@Override
 	protected void onDestroy() {
-		app.getGpsWorker().stop();
+		EventBus.getDefault().postSticky(SOSEvent.STOP);
+		app.getGpsWorker().stop("sendSos");
+		if (wakeLock != null && wakeLock.isHeld())
+			wakeLock.release();
 		super.onDestroy();
 	}
 
@@ -60,7 +130,6 @@ public class SOSActivity extends BaseActivity implements Runnable {
 		switch (which) {
 		case 0:
 			onBackPressed();
-			EventBus.getDefault().postSticky(SOSEvent.STOP);
 			break;
 		case 1:
 
@@ -88,8 +157,10 @@ public class SOSActivity extends BaseActivity implements Runnable {
 
 	@Override
 	public boolean onKeyDown(int keyCode, KeyEvent event) {
-		if (keyCode == KeyEvent.KEYCODE_MENU)
+		if (keyCode == KeyEvent.KEYCODE_MENU) {
 			showOptions();
-		return true;
+			return true;
+		}
+		return super.onKeyDown(keyCode, event);
 	}
 }

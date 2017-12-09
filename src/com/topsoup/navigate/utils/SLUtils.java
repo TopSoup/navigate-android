@@ -1,5 +1,6 @@
 package com.topsoup.navigate.utils;
 
+import java.text.DecimalFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -28,6 +29,8 @@ public class SLUtils {
 		return sdf.parse(timeStr);
 	}
 
+	private static DecimalFormat df = new DecimalFormat("######0.00000");
+
 	public static final String[] dd2dm(Double d) {
 		String[] result = new String[2];
 		String[] array = d.toString().split("[.]");
@@ -35,7 +38,7 @@ public class SLUtils {
 
 		Double m = Double.parseDouble("0." + array[1]) * 60;
 		// String[] array1 = m.toString().split("[.]");
-		result[1] = m.toString();// 得到分
+		result[1] = df.format(m);// 得到分
 		return result;
 	}
 

@@ -107,6 +107,7 @@ public class ContactActivity extends BaseActivity {
 				name = c.getString(c
 						.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME));
 				phone = getContactPhone(c);
+				phone = phone.replace(" ", "").replace("+86", "");
 				c.close();
 				etPhoneName.setText(name);
 				etPhoneNumber.setText(phone);

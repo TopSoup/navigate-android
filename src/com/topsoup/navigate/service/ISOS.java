@@ -10,7 +10,7 @@ import android.location.Location;
 public interface ISOS {
 	public void setListener(ISOSListener listener);
 
-	public void start(Context context);
+	public ISOS start(Context context);
 
 	public void stop();
 

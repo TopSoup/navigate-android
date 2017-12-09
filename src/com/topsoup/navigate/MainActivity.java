@@ -1,21 +1,24 @@
 package com.topsoup.navigate;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.xutils.view.annotation.ContentView;
 import org.xutils.view.annotation.Event;
 
+import android.Manifest;
+import android.annotation.TargetApi;
 import android.app.AlertDialog;
-import android.content.ComponentName;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.DialogInterface.OnClickListener;
 import android.content.Intent;
-import android.content.ServiceConnection;
+import android.content.pm.PackageManager;
 import android.location.LocationManager;
+import android.os.Build;
 import android.os.Bundle;
-import android.os.IBinder;
 import android.provider.Settings;
+import android.util.Log;
 import android.view.View;
 import android.widget.Toast;
 
@@ -26,45 +29,50 @@ import com.topsoup.navigate.activity.SettingsActivity;
 import com.topsoup.navigate.base.BaseActivity;
 import com.topsoup.navigate.model.Contact;
 import com.topsoup.navigate.service.MyService;
-import com.topsoup.navigate.service.MyService.MyBinder;
 import com.topsoup.navigate.utils.PhoneReader;
 import com.topsoup.navigate.worker.DBWorker;
-import com.topsoup.navigate.worker.PhoneWorker;
 
 @ContentView(R.layout.activity_main)
-public class MainActivity extends BaseActivity implements ServiceConnection {
-	private MyService service;
+public class MainActivity extends BaseActivity {
+	private final int SDK_PERMISSION_REQUEST = 127;
+	private String permissionInfo;
+
+	public static final void start(BaseActivity activity) {
+		if (activity != null)
+			activity.startActivity(new Intent(activity, MainActivity.class)
+					.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP));
+	}
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		DBWorker.instance().init(this);
 		openGPSSettings();
-		// startService(new Intent(this, MyService.class));
-		bindService(new Intent(this, MyService.class), this,
-				Context.BIND_AUTO_CREATE);
-//		ComPassWorker comPassWorker = new ComPassWorker();
-//		comPassWorker.start(this, null);
-		PhoneWorker.instance().start(this);
+		getPersimmions();
+		Log.i("SL", permissionInfo + "");
+		startService(new Intent(this, MyService.class));
+		// ComPassWorker comPassWorker = new ComPassWorker();
+		// comPassWorker.start(this, null);
 		PhoneReader.printInfo(this);
+		// abc();
 	}
+
+	//
+	// private void abc() {
+	// SMSTask task = new SMSTask("abc", "http://58.56.109.38:18851/", "SPID",
+	// "APPID", "REQID", "FIXTYPE");
+	// Location location = new Location("test");
+	// location.setLatitude(123.4);
+	// location.setLongitude(12.4);
+	// String xml = XMLBuilder.build(task, location);
+	// Log.i("SL", "xml>" + xml);
+	// Repoart.run(task.getSPURL_2(), xml);
+	// }
 
 	@Override
 	protected void onResume() {
 		super.onResume();
 		checkSettings();
-	}
-
-	@Override
-	public void onServiceConnected(ComponentName name, IBinder service) {
-		this.service = ((MyBinder) service).getService();
-		this.service.setGPS(app.getGpsWorker());
-		this.service.setSOS(app.getSmsWorker());
-	}
-
-	@Override
-	public void onServiceDisconnected(ComponentName name) {
-
 	}
 
 	@Event({ R.id.myinfo, R.id.navigate, R.id.sos })
@@ -108,7 +116,7 @@ public class MainActivity extends BaseActivity implements ServiceConnection {
 			// TODO
 			break;
 		case R.id.right:
-			// TODO
+			onBackPressed();
 			break;
 		default:
 			break;
@@ -132,7 +140,7 @@ public class MainActivity extends BaseActivity implements ServiceConnection {
 			SettingsActivity.start(this);
 			break;
 		case 2:
-			showToast("V1.0.0_Beta_20171020");
+			showToast("V1.0.3_Beta_20171208");
 			break;
 		default:
 			break;
@@ -143,12 +151,13 @@ public class MainActivity extends BaseActivity implements ServiceConnection {
 		LocationManager alm = (LocationManager) this
 				.getSystemService(Context.LOCATION_SERVICE);
 		if (alm.isProviderEnabled(android.location.LocationManager.GPS_PROVIDER)) {
-			Toast.makeText(this, "GPS模块正常", Toast.LENGTH_SHORT).show();
-			// tvInfo.setText("");
+			Toast.makeText(this, "GPS定位模块正常", Toast.LENGTH_SHORT).show();
+			return;
+		} else if (alm.isProviderEnabled(LocationManager.NETWORK_PROVIDER)) {
+			Toast.makeText(this, "网络定位模块正常", Toast.LENGTH_SHORT).show();
 			return;
 		}
 		Toast.makeText(this, "请开启GPS！", Toast.LENGTH_SHORT).show();
-		// tvInfo.setText("请打开GPS！");
 		Intent intent = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
 		startActivityForResult(intent, 0); // 此为设置完成后返回到获取界面
 	}
@@ -188,5 +197,65 @@ public class MainActivity extends BaseActivity implements ServiceConnection {
 			SettingsActivity.start(this);
 			showToast("首次使用请设置紧急联系人");
 		}
+	}
+
+	@TargetApi(23)
+	private void getPersimmions() {
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+			ArrayList<String> permissions = new ArrayList<String>();
+			/***
+			 * 定位权限为必须权限，用户如果禁止，则每次进入都会申请
+			 */
+			// 定位精确位置
+			if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+				permissions.add(Manifest.permission.ACCESS_FINE_LOCATION);
+			}
+			if (checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+				permissions.add(Manifest.permission.ACCESS_COARSE_LOCATION);
+			}
+			/*
+			 * 读写权限和电话状态权限非必要权限(建议授予)只会申请一次，用户同意或者禁止，只会弹一次
+			 */
+			// 读写权限
+			if (addPermission(permissions,
+					Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
+				permissionInfo += "Manifest.permission.WRITE_EXTERNAL_STORAGE Deny \n";
+			}
+			// 读取电话状态权限
+			if (addPermission(permissions, Manifest.permission.READ_PHONE_STATE)) {
+				permissionInfo += "Manifest.permission.READ_PHONE_STATE Deny \n";
+			}
+
+			if (permissions.size() > 0) {
+				requestPermissions(
+						permissions.toArray(new String[permissions.size()]),
+						SDK_PERMISSION_REQUEST);
+			}
+		}
+	}
+
+	@TargetApi(23)
+	private boolean addPermission(ArrayList<String> permissionsList,
+			String permission) {
+		if (checkSelfPermission(permission) != PackageManager.PERMISSION_GRANTED) { // 如果应用没有获得对应权限,则添加到列表中,准备批量申请
+			if (shouldShowRequestPermissionRationale(permission)) {
+				return true;
+			} else {
+				permissionsList.add(permission);
+				return false;
+			}
+
+		} else {
+			return true;
+		}
+	}
+
+	@TargetApi(23)
+	@Override
+	public void onRequestPermissionsResult(int requestCode,
+			String[] permissions, int[] grantResults) {
+		// TODO Auto-generated method stub
+		super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+
 	}
 }

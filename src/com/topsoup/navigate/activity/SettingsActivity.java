@@ -8,13 +8,18 @@ import org.xutils.view.annotation.ViewInject;
 
 import android.app.AlertDialog;
 import android.content.DialogInterface;
+import android.content.DialogInterface.OnClickListener;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v4.widget.SwipeRefreshLayout.OnRefreshListener;
 import android.view.View;
 import android.widget.Button;
+import android.widget.CheckBox;
+import android.widget.CompoundButton;
+import android.widget.CompoundButton.OnCheckedChangeListener;
 
+import com.topsoup.navigate.AppConfig;
 import com.topsoup.navigate.R;
 import com.topsoup.navigate.base.BaseActivity;
 import com.topsoup.navigate.model.Contact;
@@ -35,7 +40,8 @@ public class SettingsActivity extends BaseActivity {
 	@ViewInject(R.id.swipe)
 	private SwipeRefreshLayout swipeRefreshLayout;
 
-	private Contact contact1, contact2, contact3;
+	@ViewInject(R.id.cb_sos)
+	private CheckBox checkBox;
 
 	@SuppressWarnings("deprecation")
 	@Override
@@ -68,7 +74,7 @@ public class SettingsActivity extends BaseActivity {
 		case 0:
 			new AlertDialog.Builder(this)
 					.setMessage(
-							"【紧急联系人】\n可设置三个紧急联系人，SOS过程中会向设置的三个联系发送求救短信。\n点击进入设置界面进行设置。")
+							"【紧急联系人】\n1.可设置三个紧急联系人，SOS过程中会向设置的三个联系发送求救短信。\n2.点击进入设置界面进行设置。\n3.长按可删除选中联系人。")
 					.create().show();
 			break;
 		case 1:
@@ -99,18 +105,29 @@ public class SettingsActivity extends BaseActivity {
 	private void loadData() {
 		swipeRefreshLayout.setRefreshing(true);
 		List<Contact> list = app.getDbWorker().getContactList();
+		btn1.setText("联系人1\n(空)");
+		btn1.setTag(null);
+		btn2.setText("联系人2\n(空)");
+		btn2.setTag(null);
+		btn3.setText("联系人3\n(空)");
+		btn3.setTag(null);
+		checkBox.setChecked(app.config().getBoolean("soskey",
+				AppConfig.SOS_KEY_LISTEN));
+		checkBox.setOnCheckedChangeListener(new OnCheckedChangeListener() {
 
+			@Override
+			public void onCheckedChanged(CompoundButton arg0, boolean arg1) {
+				app.edit().putBoolean("soskey", arg1).commit();
+			}
+		});
 		if (list != null && list.size() > 0) {
 			for (Contact contact : list)
 				if (contact.index == 1) {
-					contact1 = contact;
-					showContact(btn1, contact1);
+					showContact(btn1, contact);
 				} else if (contact.index == 2) {
-					contact2 = contact;
-					showContact(btn2, contact2);
+					showContact(btn2, contact);
 				} else if (contact.index == 3) {
-					contact3 = contact;
-					showContact(btn3, contact3);
+					showContact(btn3, contact);
 				}
 		} else {
 			btn1.setText("联系人1\n(空)");
@@ -121,73 +138,86 @@ public class SettingsActivity extends BaseActivity {
 	}
 
 	private void showContact(Button btn, Contact contact) {
-		btn.setText(contact.getName() + "\n" + contact.getPhoneNumber());
+		if (contact != null)
+			btn.setText(contact.getName() + "\n" + contact.getPhoneNumber());
+		btn.setTag(contact);
+	}
+
+	@Event(type = View.OnLongClickListener.class, value = { R.id.contact1,
+			R.id.contact2, R.id.contact3 })
+	private boolean onLongClick(View v) {
+		Object obj = v.getTag();
+		if (obj != null && obj instanceof Contact)
+			showAskDialog((Contact) obj);
+		return true;
+	}
+
+	private void showAskDialog(final Contact contact) {
+		if (contact != null)
+			new AlertDialog.Builder(this)
+					.setMessage(
+							String.format("要删除联系人“%s”吗？", contact.getName()))
+					.setNegativeButton("取消", new OnClickListener() {
+
+						@Override
+						public void onClick(DialogInterface dialog, int which) {
+							dialog.dismiss();
+						}
+					}).setPositiveButton("删除", new OnClickListener() {
+
+						@Override
+						public void onClick(DialogInterface dialog, int which) {
+							if (app.getDbWorker().remove(contact)) {
+								showToast(String.format("联系人“%s”删除成功。",
+										contact.getName()));
+								loadData();
+							}
+						}
+					}).create().show();
 	}
 
 	@Event({ R.id.contact1, R.id.contact2, R.id.contact3 })
 	private void onBtnClick(View v) {
-		switch (v.getId()) {
-		case R.id.contact1:
-			if (contact1 != null)
-				startActivityForResult(
-						new Intent(this, ContactActivity.class).putExtra(
-								"contact", contact1), 1);
-			else
-				startActivityForResult(new Intent(this, ContactActivity.class),
-						1);
-			break;
-		case R.id.contact2:
-			if (contact2 != null)
-				startActivityForResult(
-						new Intent(this, ContactActivity.class).putExtra(
-								"contact", contact2), 2);
-			else
-				startActivityForResult(new Intent(this, ContactActivity.class),
-						2);
-			break;
-		case R.id.contact3:
-			if (contact3 != null)
-				startActivityForResult(
-						new Intent(this, ContactActivity.class).putExtra(
-								"contact", contact3), 3);
-			else
-				startActivityForResult(new Intent(this, ContactActivity.class),
-						3);
-			break;
-		}
+		Object obj = v.getTag();
+		if (obj != null && obj instanceof Contact)
+			startActivityForResult(
+					new Intent(this, ContactActivity.class).putExtra("contact",
+							(Contact) obj), v.getId());
+		else
+			startActivityForResult(new Intent(this, ContactActivity.class),
+					v.getId());
 	}
 
 	@Override
 	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
 		super.onActivityResult(requestCode, resultCode, data);
-		if (resultCode == RESULT_OK)
+		if (resultCode == RESULT_OK) {
+			Contact contact = (Contact) data.getSerializableExtra("contact");
 			switch (requestCode) {
-			case 1:
-				Contact contact1 = (Contact) data
-						.getSerializableExtra("contact");
-				contact1.setIndex(1);
-				if (app.getDbWorker().addContact(contact1)) {
+			case R.id.contact1:
+				contact.setIndex(1);
+				if (app.getDbWorker().addContact(contact)) {
 					showToast("保存成功");
-					showContact(btn1, contact1);
+					showContact(btn1, contact);
 				}
 				break;
-			case 2:
-				Contact contact2 = (Contact) data
-						.getSerializableExtra("contact");
-				contact2.setIndex(2);
-				app.getDbWorker().addContact(contact2);
-				showContact(btn2, contact2);
-
+			case R.id.contact2:
+				contact.setIndex(2);
+				if (app.getDbWorker().addContact(contact)) {
+					showToast("保存成功");
+					showContact(btn2, contact);
+				}
 				break;
-			case 3:
-				Contact contact3 = (Contact) data
-						.getSerializableExtra("contact");
-				contact3.setIndex(3);
-				app.getDbWorker().addContact(contact3);
-				showContact(btn3, contact3);
+			case R.id.contact3:
+				contact.setIndex(3);
+				if (app.getDbWorker().addContact(contact)) {
+					showToast("保存成功");
+					showContact(btn3, contact);
+				}
 				break;
 			default:
 				break;
 			}
+		}
 	}
 }

@@ -1,5 +1,6 @@
 package com.topsoup.navigate.worker;
 
+import java.util.HashMap;
 import java.util.Iterator;
 
 import org.greenrobot.eventbus.EventBus;
@@ -28,6 +29,7 @@ public class GPSWorker implements IGPS, ILOG, LocationListener, Listener {
 	private Location last;
 	private IGPSListener listener;
 	private int interval;
+	private HashMap<String, Integer> tags = new HashMap<String, Integer>();
 
 	@Override
 	public IGPS setListener(IGPSListener listener) {
@@ -40,25 +42,45 @@ public class GPSWorker implements IGPS, ILOG, LocationListener, Listener {
 			mContext = context.getApplicationContext();
 			mLocationManager = (LocationManager) mContext
 					.getSystemService(Context.LOCATION_SERVICE);
-//			last = mLocationManager
-//					.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+			// last = mLocationManager
+			// .getLastKnownLocation(LocationManager.GPS_PROVIDER);
 			logi("初始化完成");
 		}
 		return this;
 	}
 
 	@Override
-	public IGPS start(Context context, int interval) {
+	public IGPS start(Context context, int interval, String tag) {
 		if (mLocationManager == null) {
 			init(context);
 		}
+		synchronized (GPSWorker.class) {
+			if (tags.size() > 0) {
+				tags.put(tag, interval);
+				return this;
+			} else {
+				tags.put(tag, interval);
+			}
+		}
 		if (mLocationManager != null) {
 			mLocationManager.addGpsStatusListener(this);
-			mLocationManager.requestLocationUpdates(
-					LocationManager.GPS_PROVIDER, AppConfig.GPS_minTime,
-					AppConfig.GPS_minDistance, this);
-			last = mLocationManager
-					.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+			if (mLocationManager
+					.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
+				mLocationManager.requestLocationUpdates(
+						LocationManager.GPS_PROVIDER, AppConfig.GPS_minTime,
+						AppConfig.GPS_minDistance, this);
+				last = mLocationManager
+						.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+
+			}
+			if (mLocationManager
+					.isProviderEnabled(LocationManager.NETWORK_PROVIDER)) {
+				mLocationManager.requestLocationUpdates(
+						LocationManager.NETWORK_PROVIDER,
+						AppConfig.GPS_minTime, AppConfig.GPS_minDistance, this);
+				last = mLocationManager
+						.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
+			}
 			if (last != null)
 				EventBus.getDefault().postSticky(last);
 		}
@@ -66,10 +88,18 @@ public class GPSWorker implements IGPS, ILOG, LocationListener, Listener {
 	}
 
 	@Override
-	public IGPS stop() {
-		if (mLocationManager != null) {
-			mLocationManager.removeGpsStatusListener(this);
-			mLocationManager.removeUpdates(this);
+	public IGPS stop(String tag) {
+		synchronized (GPSWorker.class) {
+			if (tags.containsKey(tag)) {
+				tags.remove(tag);
+			}
+			if (tags.size() == 0) {
+				if (mLocationManager != null) {
+					mLocationManager.removeGpsStatusListener(this);
+					mLocationManager.removeUpdates(this);
+				}
+			}
+			Log.i("SL", "tags size>" + tags.size());
 		}
 		return this;
 	}

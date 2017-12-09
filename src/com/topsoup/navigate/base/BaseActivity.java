@@ -4,8 +4,6 @@ import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
 import org.xutils.x;
-import org.xutils.view.annotation.ContentView;
-import org.xutils.view.annotation.ViewInject;
 
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -27,13 +25,13 @@ import com.topsoup.navigate.activity.SOSActivity;
 import com.topsoup.navigate.model.SOS;
 import com.topsoup.navigate.utils.SLUtils;
 
-@ContentView(R.layout.activity_navigatelist)
 public abstract class BaseActivity extends Activity {
 	protected AppConfig app;
 	private Toast mToast;
 	private boolean hasOptions = false;
-	@ViewInject(R.id.title)
 	private TextView title;
+
+	private TextView center;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -41,8 +39,12 @@ public abstract class BaseActivity extends Activity {
 		app = (AppConfig) x.app();
 		x.view().inject(this);
 		hasOptions = buildOptionsMenu() != null;
-		if (findViewById(R.id.center) != null)
-			findViewById(R.id.center).setVisibility(View.GONE);
+		if (findViewById(R.id.title) != null)
+			title = (TextView) findViewById(R.id.title);
+		if (findViewById(R.id.center) != null) {
+			center = (TextView) findViewById(R.id.center);
+			center.setVisibility(View.GONE);
+		}
 		if (!hasOptions) {
 			findViewById(R.id.left).setVisibility(View.GONE);
 			findViewById(R.id.right).setOnClickListener(
