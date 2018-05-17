@@ -1,0 +1,9 @@
+第三方应用无法主动挂断电话和查询电话是否接通，因此该程序内实现自动拨打电话功能需要系统向外发送以下两条广播信息：
+//通知应用当前拨号是否成功接通
+1、public static final String ACTION_NOTIFY_CALL_SUCCESS = "com.topsoup.call.success";
+2、public static final String ACTION_NOTIFY_CALL_FAIL = "com.topsoup.call.fail";
+
+
+其他：
+该版本为测试版应用，未做签名处理
+

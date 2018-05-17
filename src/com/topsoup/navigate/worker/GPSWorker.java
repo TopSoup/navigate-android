@@ -26,7 +26,7 @@ public class GPSWorker implements IGPS, ILOG, LocationListener, Listener {
 	private static final String TAG = "SL-GPSWorker";
 	private Context mContext;
 	private LocationManager mLocationManager;
-	private Location last;
+	private Location last, lastBak;
 	private IGPSListener listener;
 	private int interval;
 	private HashMap<String, Integer> tags = new HashMap<String, Integer>();
@@ -143,6 +143,24 @@ public class GPSWorker implements IGPS, ILOG, LocationListener, Listener {
 		return result;
 	}
 
+	@Override
+	public float angleRun() {
+		if (lastBak == null)
+			return 0;
+		if (last == null)
+			return 0;
+		if (last.getSpeed() < 1)
+			return 0;
+		float result = lastBak.bearingTo(last);
+		while (result > 360 || result < 0) {
+			if (result > 360)
+				result -= 360;
+			else if (result < 0)
+				result += 360;
+		}
+		return result;
+	}
+
 	public float distanceBySys1(Location target) {
 		if (last == null)
 			return -999;
@@ -157,6 +175,7 @@ public class GPSWorker implements IGPS, ILOG, LocationListener, Listener {
 
 	@Override
 	public void onLocationChanged(Location location) {
+		lastBak = last;
 		last = location;
 		if (listener != null)
 			listener.onLocate(last);

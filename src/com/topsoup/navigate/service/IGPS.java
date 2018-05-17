@@ -27,6 +27,8 @@ public interface IGPS {
 	public int getInterval();
 
 	public float angle(Location target);
+	
+	public float angleRun();
 
 	public DIRECTION direction(Location target);
 

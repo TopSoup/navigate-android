@@ -10,7 +10,7 @@ import android.util.AttributeSet;
 import android.view.View;
 
 public class CompassView extends View {
-	private Paint circlePaint, tickPaint, mPaint;
+	private Paint circlePaint, tickPaint, mPaint, mPaintRun;
 	private TextPaint textPaint;
 	// 指定控件宽和高，用于自适应
 	private float vWidth;
@@ -22,6 +22,7 @@ public class CompassView extends View {
 	private float textHeight;
 
 	private float mDegrees, distance;
+	private float mDegreesRun;
 
 	public CompassView(Context context) {
 		super(context);
@@ -54,6 +55,12 @@ public class CompassView extends View {
 		mPaint.setStyle(Paint.Style.STROKE);
 		mPaint.setColor(Color.parseColor("#666666"));
 		mPaint.setAntiAlias(true);
+
+		mPaintRun = new Paint();
+		mPaintRun.setStrokeWidth(2);
+		mPaintRun.setStyle(Paint.Style.STROKE);
+		mPaintRun.setColor(Color.parseColor("#666666"));
+		mPaintRun.setAntiAlias(true);
 	}
 
 	// 自适应在这里做的
@@ -74,12 +81,13 @@ public class CompassView extends View {
 	private void canvasCenterCircle(Canvas canvas) {
 		mPaint.setStyle(Paint.Style.FILL);
 		mPaint.setColor(Color.GRAY);
-		canvas.drawCircle(vWidth / 2, vWidth / 2, 10, mPaint);
+		canvas.drawCircle(vWidth / 2, vWidth / 2, 12, mPaint);
 	}
 
-	public void setDegrees(float degrees, float distance) {
+	public void setDegrees(float degrees, float distance, float degreesRun) {
 		this.mDegrees = degrees;
 		this.distance = distance;
+		this.mDegreesRun = degreesRun;
 		invalidate();
 	}
 
@@ -99,9 +107,9 @@ public class CompassView extends View {
 		canvas.drawText(str, vWidth / 2 - strW / 2, vWidth / 4, mPaint);
 	}
 
-	private void abc(Canvas canvas) {
+	private void drawArrow(Canvas canvas) {
 		mPaint.setStyle(Paint.Style.FILL);
-		mPaint.setColor(Color.BLUE);
+		mPaint.setColor(Color.RED);
 		canvas.save();
 		canvas.rotate(mDegrees, vWidth / 2, vWidth / 2);
 		float fromX = vWidth / 2, fromY = vWidth / 2, toX = vWidth / 2, toY = vWidth / 6, heigth = 13, bottom = 8;
@@ -128,6 +136,39 @@ public class CompassView extends View {
 		canvas.restore();
 	}
 
+	private void drawRun(Canvas canvas) {
+		if (mDegreesRun == 0) {
+			return;
+		}
+		mPaintRun.setAlpha(0);
+		mPaintRun.setStyle(Paint.Style.FILL);
+		mPaintRun.setColor(Color.WHITE);
+		canvas.save();
+		canvas.rotate(mDegreesRun, vWidth / 2, vWidth / 2);
+		float fromX = vWidth / 2, fromY = vWidth / 2, toX = vWidth / 2, toY = fromY - 22, heigth = 16, bottom = 10;
+		canvas.drawLine(fromX, fromY, toX, toY, mPaintRun);
+		float juli = (float) Math.sqrt((toX - fromX) * (toX - fromX)
+				+ (toY - fromY) * (toY - fromY));// 获取线段距离
+		float juliX = toX - fromX;// 有正负，不要取绝对值
+		float juliY = toY - fromY;// 有正负，不要取绝对值
+		float dianX = toX - (heigth / juli * juliX);
+		float dianY = toY - (heigth / juli * juliY);
+		// float dian2X = fromX + (heigth / juli * juliX);
+		// float dian2Y = fromY + (heigth / juli * juliY);
+		// 终点的箭头
+		Path path = new Path();
+		path.moveTo(toX, toY - 15);// 此点为三边形的起点
+		path.lineTo(dianX + (bottom / juli * juliY), dianY
+				- (bottom / juli * juliX));
+		path.lineTo(dianX - (bottom / juli * juliY), dianY
+				+ (bottom / juli * juliX));
+		path.close(); // 使这些点构成封闭的三边形
+		canvas.drawPath(path, mPaintRun);
+		// canvas.drawLine(vWidth / 2, vWidth / 2 + 100, vWidth / 2,
+		// -vWidth / 5 * 4, mPaint);
+		canvas.restore();
+	}
+
 	@Override
 	protected void onDraw(Canvas canvas) {
 		// canvas.drawColor(Color.CYAN);
@@ -136,8 +177,13 @@ public class CompassView extends View {
 		// 画红色的刻度
 		int degress;
 		float textWidth;
-		abc(canvas);
+		// 绘制箭头
+		drawArrow(canvas);
+		// 回执行走方向
+		drawRun(canvas);
+		// 绘制文字
 		drawStr(canvas);
+		// 绘制中心点
 		canvasCenterCircle(canvas);
 		for (int i = 0; i < 24; i++) {
 			canvas.save();
