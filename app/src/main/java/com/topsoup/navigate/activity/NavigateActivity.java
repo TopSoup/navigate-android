@@ -20,8 +20,19 @@ import com.topsoup.navigate.model.MyLocation;
 import com.topsoup.navigate.model.SOS;
 import com.topsoup.navigate.view.CompassView;
 
+import android.hardware.Sensor;
+import android.hardware.SensorEvent;
+import android.hardware.SensorEventListener;
+import android.hardware.SensorManager;
+
+import android.util.Log;
+
+import java.util.List;
+
 @ContentView(R.layout.activity_navigate)
-public class NavigateActivity extends BaseActivity {
+public class NavigateActivity extends BaseActivity implements SensorEventListener {
+	private static final String TAG = NavigateActivity.class.getSimpleName();
+
 	public static final void start(BaseActivity baseActivity, MyLocation locate) {
 		baseActivity.startActivity(new Intent(baseActivity,
 				NavigateActivity.class).putExtra("locate", locate));
@@ -47,6 +58,11 @@ public class NavigateActivity extends BaseActivity {
 	private SwipeRefreshLayout swipeRefreshLayout;
 	@ViewInject(R.id.compassView)
 	private CompassView compassView;
+
+	private Sensor accelerometer; // 加速度传感器
+	private Sensor sensor;
+	private SensorManager sensorManager;
+	private float currentDegree = 0f;
 
 	private String gpsTag;
 
@@ -89,6 +105,117 @@ public class NavigateActivity extends BaseActivity {
 			}
 		});
 		loadData();
+		initSensor();
+	}
+
+	@Override
+	protected void onResume() {
+		super.onResume();
+		sensorManager.registerListener(this, sensor, SensorManager.SENSOR_DELAY_UI);
+	}
+
+
+	@Override
+	protected void onPause() {
+		sensorManager.unregisterListener(this);
+		super.onPause();
+	}
+
+	@Override
+	protected void onStop() {
+		sensorManager.unregisterListener(this);
+		super.onStop();
+	}
+
+	private void initSensor() {
+		sensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
+		sensor = sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD);
+		// 初始化加速度传感器
+		accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+
+		if (hasHW()) {
+			// 开始监听
+			sensorManager.registerListener(this, accelerometer,
+					Sensor.TYPE_ACCELEROMETER);
+			sensorManager.registerListener(this, sensor,
+					Sensor.TYPE_MAGNETIC_FIELD);
+		}
+	}
+
+	public boolean hasHW() {
+		boolean has1 = true, has2 = false;
+		List<Sensor> deviceSensors = sensorManager
+				.getSensorList(Sensor.TYPE_ALL);
+		for (Sensor sensor : deviceSensors) {
+//			if (sensor.getType() == Sensor.TYPE_ACCELEROMETER)
+//				has1 = true;
+//			else if (sensor.getType() == Sensor.TYPE_MAGNETIC_FIELD)
+//				has2 = true;
+			if (sensor.getType() == Sensor.TYPE_MAGNETIC_FIELD)
+				has2 = true;
+			Log.i(TAG, sensor.getName());
+		}
+		return has1 && has2;
+	}
+	//----SensorEventListener---
+	@Override
+	public void onSensorChanged(SensorEvent event) {
+
+		if (event.sensor.getType() == Sensor.TYPE_ACCELEROMETER) {
+			accelerometerValues = event.values;
+		}
+		if (event.sensor.getType() == Sensor.TYPE_MAGNETIC_FIELD) {
+			magneticFieldValues = event.values;
+
+			Log.i("SL", "magnetic value: " + magneticFieldValues);
+		}
+		calculateOrientation();
+	}
+
+	private float[] accelerometerValues = new float[3];
+	private float[] magneticFieldValues = new float[3];
+
+	// 计算方向
+	private void calculateOrientation() {
+		float[] values = new float[3];
+		float[] R = new float[9];
+		SensorManager.getRotationMatrix(R, null, accelerometerValues,
+				magneticFieldValues);
+		SensorManager.getOrientation(R, values);
+		values[0] = (float) Math.toDegrees(values[0]);
+
+		Log.i(TAG, values[0] + "");
+		if (values[0] >= -5 && values[0] < 5) {
+			Log.i(TAG, "正北");
+		} else if (values[0] >= 5 && values[0] < 85) {
+			Log.i(TAG, "东北");
+		} else if (values[0] >= 85 && values[0] <= 95) {
+			Log.i(TAG, "正东");
+		} else if (values[0] >= 95 && values[0] < 175) {
+			Log.i(TAG, "东南");
+		} else if ((values[0] >= 175 && values[0] <= 180)
+				|| (values[0]) >= -180 && values[0] < -175) {
+			Log.i(TAG, "正南");
+		} else if (values[0] >= -175 && values[0] < -95) {
+			Log.i(TAG, "西南");
+		} else if (values[0] >= -95 && values[0] < -85) {
+			Log.i(TAG, "正西");
+		} else if (values[0] >= -85 && values[0] < -5) {
+			Log.i(TAG, "西北");
+		}
+
+		float degree = values[0];
+		if (Math.abs(currentDegree - degree) > 1) {
+			compassView.setRotate(degree);
+			currentDegree = degree;
+
+			Log.i(TAG, "========setRotate :" + degree);
+		}
+	}
+
+	@Override
+	public void onAccuracyChanged(Sensor sensor, int accuracy) {
+
 	}
 
 	@Override

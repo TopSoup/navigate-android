@@ -56,6 +56,8 @@ public class ComPassWorker implements IComPass, SensorEventListener {
 		}
 		if (event.sensor.getType() == Sensor.TYPE_MAGNETIC_FIELD) {
 			magneticFieldValues = event.values;
+
+			Log.i("SL", "magnetic value: " + magneticFieldValues);
 		}
 		calculateOrientation();
 	}

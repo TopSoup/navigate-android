@@ -7,10 +7,16 @@ import android.graphics.Paint;
 import android.graphics.Path;
 import android.text.TextPaint;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.View;
+import android.graphics.Rect;
 
 public class CompassView extends View {
+	private static final String TAG = "CompassView";
+
 	private Paint circlePaint, tickPaint, mPaint, mPaintRun;
+	private Paint mKeyPaint;//每30度绘制一个关键线
+
 	private TextPaint textPaint;
 	// 指定控件宽和高，用于自适应
 	private float vWidth;
@@ -23,6 +29,21 @@ public class CompassView extends View {
 
 	private float mDegrees, distance;
 	private float mDegreesRun;
+	private static final double CONVERSION_ANGLE_CONST = Math.PI / 180;  //转换角所用的常量
+	private static final int DIVIDE_COUNT = 24; //将圆划分为24等份
+	private double lineRateSize = 1 / 15d;
+	private int offset = 90;
+	private int rotate = 0; //顺时针旋转角度
+	private int width, height;
+	private boolean isDebug = false;
+
+	//外置接口
+	public void setRotate(float rotate) {
+		this.rotate = (int) -rotate + offset;
+		invalidate();
+
+		Log.i(TAG, "========setRotate: " + rotate);
+	}
 
 	public CompassView(Context context) {
 		super(context);
@@ -44,6 +65,11 @@ public class CompassView extends View {
 		tickPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
 		tickPaint.setColor(Color.RED);
 		tickPaint.setStrokeWidth(2);
+
+		mKeyPaint = new Paint();
+		mKeyPaint.setStrokeWidth(3);
+		mKeyPaint.setColor(Color.RED);
+		mKeyPaint.setAntiAlias(true);
 
 		// 对字的画笔进行初始化
 		textPaint = new TextPaint(Paint.ANTI_ALIAS_FLAG);
@@ -111,7 +137,8 @@ public class CompassView extends View {
 		mPaint.setStyle(Paint.Style.FILL);
 		mPaint.setColor(Color.RED);
 		canvas.save();
-		canvas.rotate(mDegrees, vWidth / 2, vWidth / 2);
+		float d = (mDegrees + rotate + 360) % 360;
+		canvas.rotate(d, vWidth / 2, vWidth / 2);
 		float fromX = vWidth / 2, fromY = vWidth / 2, toX = vWidth / 2, toY = vWidth / 6, heigth = 13, bottom = 8;
 		canvas.drawLine(fromX, vWidth / 3 * 2, toX, toY, mPaint);
 		float juli = (float) Math.sqrt((toX - fromX) * (toX - fromX)
@@ -144,7 +171,8 @@ public class CompassView extends View {
 		mPaintRun.setStyle(Paint.Style.FILL);
 		mPaintRun.setColor(Color.WHITE);
 		canvas.save();
-		canvas.rotate(mDegreesRun, vWidth / 2, vWidth / 2);
+		float d = (mDegrees + rotate + 360) % 360;
+		canvas.rotate(d, vWidth / 2, vWidth / 2);
 		float fromX = vWidth / 2, fromY = vWidth / 2, toX = vWidth / 2, toY = fromY - 22, heigth = 16, bottom = 10;
 		canvas.drawLine(fromX, fromY, toX, toY, mPaintRun);
 		float juli = (float) Math.sqrt((toX - fromX) * (toX - fromX)
@@ -169,80 +197,113 @@ public class CompassView extends View {
 		canvas.restore();
 	}
 
+	//坐标旋转公式
+	private float getRotatePointX(float a, float x, float y) {
+		return (float) ((x - width / 2) * Math.cos(CONVERSION_ANGLE_CONST * a) + (y - height / 2) * Math.sin(CONVERSION_ANGLE_CONST * a)) + width / 2;
+	}
+
+	private float getRotatePointY(float a, float x, float y) {
+		return (float) ((y - height / 2) * Math.cos(CONVERSION_ANGLE_CONST * a) - (x - width / 2) * Math.sin(CONVERSION_ANGLE_CONST * a)) + height / 2;
+	}
+
+	private void drawOriText(Canvas canvas, String strOri, float rotateAngle) {
+
+		float x1 = compassRadiu, x2 = compassRadiu;
+		float y1 = compassRadiu*2, y2 = (float)(compassRadiu*2 - compassRadiu * lineRateSize - 8);
+		int textWidth = 0;
+		int textHeight = 0;
+
+		Rect rect = new Rect();
+		textPaint.getTextBounds(strOri, 0, strOri.length(), rect);
+		textWidth = rect.width();//文字宽
+		textHeight = rect.height();//文字高
+
+		canvas.drawText(strOri, getRotatePointX(rotateAngle, x2, y2) - textWidth / 2, getRotatePointY(rotateAngle, x2, y2) + textHeight / 2, textPaint);
+	}
+
+	@Override
+	protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+		super.onMeasure(widthMeasureSpec, heightMeasureSpec);
+		width = getMeasuredWidth();
+		height = getMeasuredHeight();
+	}
+
 	@Override
 	protected void onDraw(Canvas canvas) {
+		super.onDraw(canvas);
+
 		// canvas.drawColor(Color.CYAN);
 		// 黑色圆盘
 		canvas.drawCircle(compassRadiu, compassRadiu, compassRadiu, circlePaint);
 		// 画红色的刻度
-		int degress;
+		float degress;
 		float textWidth;
 		// 绘制箭头
 		drawArrow(canvas);
-		// 回执行走方向
+		// 绘制行走方向
 		drawRun(canvas);
 		// 绘制文字
 		drawStr(canvas);
 		// 绘制中心点
 		canvasCenterCircle(canvas);
-		for (int i = 0; i < 24; i++) {
-			canvas.save();
-			canvas.translate(compassRadiu, compassRadiu);
-			// 当前canvas旋转角度
-			degress = i * 15;
-			canvas.rotate(15 * i);
-			canvas.drawLine(0, -compassRadiu, 0, -compassRadiu + tickHeight,
-					tickPaint);
-			switch (degress) {
-			case 0:
-				textWidth = textPaint.measureText("北");
-				drawText(canvas, "北", textWidth);
-				break;
-			case 45:
-				textWidth = textPaint.measureText("45");
-				drawText(canvas, "45", textWidth);
-				break;
-			case 90:
-				textWidth = textPaint.measureText("东");
-				drawText(canvas, "东", textWidth);
-				break;
-			case 135:
-				textWidth = textPaint.measureText("135");
-				drawText(canvas, "135", textWidth);
-				break;
-			case 180:
-				textWidth = textPaint.measureText("南");
-				drawText(canvas, "南", textWidth);
-				break;
-			case 225:
-				textWidth = textPaint.measureText("225");
-				drawText(canvas, "225", textWidth);
-				break;
-			case 270:
-				textWidth = textPaint.measureText("西");
-				drawText(canvas, "西", textWidth);
-				break;
-			case 315:
-				textWidth = textPaint.measureText("315");
-				drawText(canvas, "315", textWidth);
-				break;
-			case 310:
-				textWidth = textPaint.measureText("310");
-				drawText(canvas, "310", textWidth);
-				// canvas.drawLine(0,
-				// -compassRadiu + tickHeight + textHeight + 10,
-				// -textWidth / 3, -compassRadiu + tickHeight + textHeight
-				// + 30, tickPaint);
-				// canvas.drawLine(0,
-				// -compassRadiu + tickHeight + textHeight + 10,
-				// textWidth / 3, -compassRadiu + tickHeight + textHeight
-				// + 30, tickPaint);
+		int ax = 360 / DIVIDE_COUNT;
+		for (int i = 0; i < DIVIDE_COUNT; i++) {
+			float rotateAngle = (ax * i - rotate + 360) % 360;
+			degress = rotateAngle;
+			//绘制文字
+			float genAngle = (((270 - rotateAngle < 0 ? (270 - rotateAngle + 360) : (270 - rotateAngle)) - rotate) + 360) % 360;//转换起始角度，以最上方为0度
 
-				break;
-			default:
-				break;
+			//绘制普通线
+			float x1 = compassRadiu, x2 = compassRadiu;//(float)(compassRadiu * lineRateSize + compassRadiu);
+			float y1 = compassRadiu*2, y2 = (float)(compassRadiu*2 - compassRadiu * lineRateSize);//compassRadiu*2;
+
+//			Log.i(TAG, "=====> r: " + compassRadiu+" degress: " + degress + " width: "+width + " height:" + height);
+//			Log.i(TAG, "=====> onDraw x1: " + getRotatePointX(degress, x1, y1) + "  x2:" + getRotatePointX(degress, x2, y2));
+//			Log.i(TAG, "=====> onDraw y1: " + getRotatePointY(degress, x1, y1) + "  y2:" + getRotatePointY(degress, x2, y2));
+
+			canvas.drawLine(getRotatePointX(degress, x1, y1), getRotatePointY(degress, x1, y1),
+					getRotatePointX(degress, x2, y2), getRotatePointY(degress, x2, y2), tickPaint);
+
+
+			if ((rotateAngle + rotate) % 45 == 0) {
+				//绘制关键线
+				x1 = compassRadiu;
+				x2 = compassRadiu;
+				y1 = compassRadiu*2;
+				y2 = (float)(compassRadiu*2 - compassRadiu * lineRateSize - 6);
+
+				canvas.drawLine(getRotatePointX(rotateAngle, x1, y1), getRotatePointY(rotateAngle, x1, y1),
+						getRotatePointX(rotateAngle, x2, y2), getRotatePointY(rotateAngle, x2, y2), mKeyPaint);
+
+				//绘制文字
+				String strA;//显示的角度
+				if (genAngle < 10) {
+					strA = " " + (int) genAngle + "°";
+				} else if (genAngle < 100) {
+					strA = " " + (int) genAngle + "°";
+				} else {
+					strA = "" + (int) genAngle + "°";
+
+				}
+
+				//绘制东西南北文字
+				String strOri;//显示的方向
+				if ((int) genAngle == 0) {
+					strOri = "北";
+					drawOriText(canvas, strOri, rotateAngle);
+				} else if (genAngle == 90) {
+					strOri = "东";
+					drawOriText(canvas, strOri, rotateAngle);
+				} else if (genAngle == 180) {
+					strOri = "南";
+					drawOriText(canvas, strOri, rotateAngle);
+				} else if (genAngle == 270) {
+					strOri = "西";
+					drawOriText(canvas, strOri, rotateAngle);
+				} else {
+					drawOriText(canvas, strA, rotateAngle);
+				}
 			}
-			canvas.restore();
 		}
 	}
 
