@@ -54,6 +54,8 @@ public class NavigateActivity extends BaseActivity implements SensorEventListene
 	private TextView tvAngle;
 	@ViewInject(R.id.distance)
 	private TextView tvDistance;
+	@ViewInject(R.id.speed)
+	private TextView Jspeed;
 	@ViewInject(R.id.swipe)
 	private SwipeRefreshLayout swipeRefreshLayout;
 	@ViewInject(R.id.compassView)
@@ -235,6 +237,13 @@ public class NavigateActivity extends BaseActivity implements SensorEventListene
 		float angle = app.getGpsWorker().angle(target);
 		float distanceBysys = app.getGpsWorker().distance(target);
 		float angleRun = app.getGpsWorker().angleRun();
+		Location last = app.getGpsWorker().last();
+		float speed_j = 0;
+		if (last != null) {
+			float speed = (float) (last.getSpeed() * 3.6);
+			speed_j = (float) (speed * 0.5144444);
+		}
+
 		tvDistance.setText(String.format("距离：%.2f米", distanceBysys));
 		tvDistance.setVisibility(View.GONE);
 		tvName.setText(String.format("目标：%s", name));
@@ -242,7 +251,10 @@ public class NavigateActivity extends BaseActivity implements SensorEventListene
 		showTitle(String.format("目标：%s", name));
 		tvAngle.setText(String.format("方位角：%.2f°", angle));
 		tvAngle.setVisibility(View.GONE);
-		compassView.setDegrees(angle, distanceBysys, angleRun);
+		Jspeed.setText(String.format("速度：%.1f节", speed_j));
+		Jspeed.setVisibility(View.GONE);
+
+		compassView.setDegrees(angle, distanceBysys, angleRun, speed_j);
 		swipeRefreshLayout.setRefreshing(false);
 	}
 

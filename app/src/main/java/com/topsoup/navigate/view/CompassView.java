@@ -29,17 +29,21 @@ public class CompassView extends View {
 
 	private float mDegrees, distance;
 	private float mDegreesRun;
+	private float speed_j;
 	private static final double CONVERSION_ANGLE_CONST = Math.PI / 180;  //转换角所用的常量
 	private static final int DIVIDE_COUNT = 24; //将圆划分为24等份
 	private double lineRateSize = 1 / 15d;
 	private int offset = 90;
 	private int rotate = 0; //顺时针旋转角度
+	private float _in_rotate = 0; //顺时针旋转角度
 	private int width, height;
 	private boolean isDebug = false;
 
 	//外置接口
 	public void setRotate(float rotate) {
 		this.rotate = (int) -rotate + offset;
+		_in_rotate = -rotate;
+
 		invalidate();
 
 		Log.i(TAG, "========setRotate: " + rotate);
@@ -110,10 +114,11 @@ public class CompassView extends View {
 		canvas.drawCircle(vWidth / 2, vWidth / 2, 12, mPaint);
 	}
 
-	public void setDegrees(float degrees, float distance, float degreesRun) {
+	public void setDegrees(float degrees, float distance, float degreesRun, float speed_j) {
 		this.mDegrees = degrees;
 		this.distance = distance;
 		this.mDegreesRun = degreesRun;
+		this.speed_j = speed_j;
 		invalidate();
 	}
 
@@ -129,7 +134,11 @@ public class CompassView extends View {
 		int strdW = (int) mPaint.measureText(strd);
 		String str = String.format("方位角:%.1f°\n", mDegrees);
 		int strW = (int) mPaint.measureText(str);
-		canvas.drawText(strd, vWidth / 2 - strdW / 2, vWidth / 4 * 3, mPaint);
+		String strspeed = String.format("速度:%.1f节\n", speed_j);
+		int strspeedW = (int) mPaint.measureText(strspeed);
+
+		canvas.drawText(strspeed, vWidth / 2 - strspeedW / 2, vWidth / 4 * 3 , mPaint);
+		canvas.drawText(strd, vWidth / 2 - strdW / 2, vWidth / 4 * 3 - 16, mPaint);
 		canvas.drawText(str, vWidth / 2 - strW / 2, vWidth / 4, mPaint);
 	}
 
@@ -137,7 +146,7 @@ public class CompassView extends View {
 		mPaint.setStyle(Paint.Style.FILL);
 		mPaint.setColor(Color.RED);
 		canvas.save();
-		float d = (mDegrees + rotate + 360) % 360;
+		float d = (mDegrees + _in_rotate + 360) % 360;
 		canvas.rotate(d, vWidth / 2, vWidth / 2);
 		float fromX = vWidth / 2, fromY = vWidth / 2, toX = vWidth / 2, toY = vWidth / 6, heigth = 13, bottom = 8;
 		canvas.drawLine(fromX, vWidth / 3 * 2, toX, toY, mPaint);
@@ -171,7 +180,7 @@ public class CompassView extends View {
 		mPaintRun.setStyle(Paint.Style.FILL);
 		mPaintRun.setColor(Color.WHITE);
 		canvas.save();
-		float d = (mDegrees + rotate + 360) % 360;
+		float d = (mDegreesRun + _in_rotate + 360) % 360;
 		canvas.rotate(d, vWidth / 2, vWidth / 2);
 		float fromX = vWidth / 2, fromY = vWidth / 2, toX = vWidth / 2, toY = fromY - 22, heigth = 16, bottom = 10;
 		canvas.drawLine(fromX, fromY, toX, toY, mPaintRun);
