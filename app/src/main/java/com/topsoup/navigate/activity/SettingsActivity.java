@@ -40,8 +40,8 @@ public class SettingsActivity extends BaseActivity {
 	@ViewInject(R.id.swipe)
 	private SwipeRefreshLayout swipeRefreshLayout;
 
-	@ViewInject(R.id.cb_sos)
-	private CheckBox checkBox;
+	//@ViewInject(R.id.cb_sos)
+	//private CheckBox checkBox;
 
 	@SuppressWarnings("deprecation")
 	@Override
@@ -111,15 +111,15 @@ public class SettingsActivity extends BaseActivity {
 		btn2.setTag(null);
 		btn3.setText("联系人3\n(空)");
 		btn3.setTag(null);
-		checkBox.setChecked(app.config().getBoolean("soskey",
-				AppConfig.SOS_KEY_LISTEN));
-		checkBox.setOnCheckedChangeListener(new OnCheckedChangeListener() {
-
-			@Override
-			public void onCheckedChanged(CompoundButton arg0, boolean arg1) {
-				app.edit().putBoolean("soskey", arg1).commit();
-			}
-		});
+//		checkBox.setChecked(app.config().getBoolean("soskey",
+//				AppConfig.SOS_KEY_LISTEN));
+//		checkBox.setOnCheckedChangeListener(new OnCheckedChangeListener() {
+//
+//			@Override
+//			public void onCheckedChanged(CompoundButton arg0, boolean arg1) {
+//				app.edit().putBoolean("soskey", arg1).commit();
+//			}
+//		});
 		if (list != null && list.size() > 0) {
 			for (Contact contact : list)
 				if (contact.index == 1) {

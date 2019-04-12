@@ -54,7 +54,7 @@ public class MyService extends Service implements IGPSListener, ISOSListener,
 		gps.setListener(this);
 		cpuLock = PowerUtils.makeCpuLock(this, "service_cpu");
 		// gps.start(this, 0, "service");
-		startForeground(R.id.info, new Notification());
+		//startForeground(R.id.info, new Notification());
 		if (!EventBus.getDefault().isRegistered(this))
 			EventBus.getDefault().register(this);
 	}

@@ -103,5 +103,6 @@
     <orderEntry type="library" name="org.xutils:xutils-3.5.0" level="project" />
     <orderEntry type="library" name="com.android.support:support-fragment-26.1.0" level="project" />
     <orderEntry type="library" name="com.android.support:support-v4-26.1.0" level="project" />
+    <orderEntry type="library" name="_home_bb_tools_sdk_platforms_android_26_android_jar-android-26" level="project" />
   </component>
 </module>

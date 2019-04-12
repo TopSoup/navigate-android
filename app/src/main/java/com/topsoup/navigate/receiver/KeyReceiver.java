@@ -13,17 +13,18 @@ public class KeyReceiver extends BroadcastReceiver {
 		String action = intent.getAction();
 		AppConfig app = (AppConfig) context.getApplicationContext();
 		if (app.config().getBoolean("soskey", AppConfig.SOS_KEY_LISTEN)) {
-			if (action.equals("android.action.sos")) {// 段按
-				int sos_action = intent.getIntExtra("", 1);// 0:down ,1:up。默认抬起
-				if (sos_action == 0) {
-					// 按下
-				} else {
-					// 抬起
-				}
-			} else if (action.equals("android.com.sos")) {// 长按
-				context.startActivity(new Intent(context, SOSActivity.class)
-						.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
-			}
+			//remove sos fun
+//			if (action.equals("android.action.sos")) {// 段按
+//				int sos_action = intent.getIntExtra("", 1);// 0:down ,1:up。默认抬起
+//				if (sos_action == 0) {
+//					// 按下
+//				} else {
+//					// 抬起
+//				}
+//			} else if (action.equals("android.com.sos")) {// 长按
+//				context.startActivity(new Intent(context, SOSActivity.class)
+//						.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
+//			}
 		}
 	}
 }

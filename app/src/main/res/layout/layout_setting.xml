@@ -4,23 +4,25 @@
     android:layout_height="match_parent"
     android:orientation="vertical" >
 
+    <!--
     <CheckBox
         android:id="@+id/cb_sos"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center_horizontal"
         android:text="监听SOS按键" />
+    -->
 
     <!--
         android:textOff="SOS按键未监听（点击修改）"
         android:textOn="SOS按键监听中（点击修改）"
     -->
 
-    <View
-        android:layout_width="match_parent"
-        android:layout_height="1dp"
-        android:layout_margin="5dp"
-        android:background="@android:color/black" />
+    <!--<View-->
+        <!--android:layout_width="match_parent"-->
+        <!--android:layout_height="1dp"-->
+        <!--android:layout_margin="5dp"-->
+        <!--android:background="@android:color/black" />-->
 
     <Button
         android:id="@+id/contact1"

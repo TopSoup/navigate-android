@@ -37,6 +37,12 @@ public class MainActivity extends BaseActivity {
 	private final int SDK_PERMISSION_REQUEST = 127;
 	private String permissionInfo;
 
+	@Override
+	protected void onDestroy() {
+		super.onDestroy();
+		System.exit(0);
+	}
+
 	public static final void start(BaseActivity activity) {
 		if (activity != null)
 			activity.startActivity(new Intent(activity, MainActivity.class)
@@ -140,7 +146,7 @@ public class MainActivity extends BaseActivity {
 			SettingsActivity.start(this);
 			break;
 		case 2:
-			showToast("V1.0.4_Beta_20180517");
+			showToast("V1.0.6_rel_20190105");
 			break;
 		default:
 			break;
