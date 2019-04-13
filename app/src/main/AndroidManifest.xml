@@ -27,6 +27,8 @@
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
     <!-- 电源锁 -->
     <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.DEVICE_POWER"/>
+    <uses-permission android:name="android.permission.DISABLE_KEYGUARD"/>
 
     <uses-sdk
         android:minSdkVersion="21"
@@ -105,6 +107,8 @@
             <intent-filter>
                 <action android:name="android.action.sos" />
                 <action android:name="android.com.sos" />
+                <action android:name="android.intent.action.PTT.down" />
+                <action android:name="android.intent.action.PTT.up" />
             </intent-filter>
         </receiver>
     </application>

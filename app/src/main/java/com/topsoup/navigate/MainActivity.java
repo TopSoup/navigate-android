@@ -140,7 +140,7 @@ public class MainActivity extends BaseActivity {
 			SettingsActivity.start(this);
 			break;
 		case 2:
-			showToast("V1.0.4_Beta_20180517");
+			showToast("V1.0.6.3_20190414");
 			break;
 		default:
 			break;

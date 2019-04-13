@@ -6,11 +6,27 @@ import com.topsoup.navigate.activity.SOSActivity;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.util.Log;
+import android.widget.Toast;
 
 public class KeyReceiver extends BroadcastReceiver {
+	private Toast mToast;
+
+//	protected void showToast(Context context, String msg) {
+//		if (mToast == null)
+//			mToast = Toast.makeText(context, msg, Toast.LENGTH_LONG);
+//		else
+//			mToast.setText(msg);
+//		mToast.show();
+//	}
+
+//	android.intent.action.PTT.up
 	@Override
 	public void onReceive(Context context, Intent intent) {
 		String action = intent.getAction();
+//		showToast(context,"event:"+action);
+
+		Log.i("NKEY", "event:"+action);
 		AppConfig app = (AppConfig) context.getApplicationContext();
 		if (app.config().getBoolean("soskey", AppConfig.SOS_KEY_LISTEN)) {
 			if (action.equals("android.action.sos")) {// 段按

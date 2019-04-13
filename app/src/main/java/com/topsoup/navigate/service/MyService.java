@@ -24,6 +24,7 @@ import com.topsoup.navigate.model.SOS;
 import com.topsoup.navigate.task.SMSTask;
 import com.topsoup.navigate.utils.PowerUtils;
 import com.topsoup.navigate.worker.PhoneWorker;
+import com.topsoup.navigate.key.HomeKeyObserver;
 
 public class MyService extends Service implements IGPSListener, ISOSListener,
 		IComPassListener, ILOG {
@@ -35,12 +36,14 @@ public class MyService extends Service implements IGPSListener, ISOSListener,
 	private PhoneWorker phone;
 	private HashMap<String, SMSTask> runningTask = new HashMap<String, SMSTask>();
 	private PowerUtils cpuLock;
+	private HomeKeyObserver mHomeKeyObserver;
 
 	public class MyBinder extends Binder {
 		public MyService getService() {
 			return MyService.this;
 		}
 	}
+
 
 	@Override
 	public void onCreate() {
@@ -57,6 +60,28 @@ public class MyService extends Service implements IGPSListener, ISOSListener,
 		startForeground(R.id.info, new Notification());
 		if (!EventBus.getDefault().isRegistered(this))
 			EventBus.getDefault().register(this);
+
+		mHomeKeyObserver = new HomeKeyObserver(this);
+		mHomeKeyObserver.setHomeKeyListener(new HomeKeyObserver.OnHomeKeyListener() {
+			@Override
+			public void onHomeKeyPressed() {
+				Log.i(TAG,"----> 按下");
+				System.out.println("----> 按下");
+			}
+
+			@Override
+			public void onHomeKeyReleased() {
+				Log.i(TAG,"----> 松开");
+				System.out.println("----> 松开");
+			}
+
+			@Override
+			public void onHomeKeyLongPressed() {
+				Log.i(TAG,"----> 长按");
+				System.out.println("----> 长按");
+			}
+		});
+		mHomeKeyObserver.startListen();
 	}
 
 	@Override
